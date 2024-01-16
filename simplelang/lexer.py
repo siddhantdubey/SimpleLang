@@ -1,4 +1,3 @@
-import re
 from simplelang.tokens import TokenType
 
 class Token:
@@ -169,6 +168,7 @@ class Lexer:
             'if': TokenType.IF,
             'else': TokenType.ELSE,
             'while': TokenType.WHILE,
+            'for': TokenType.FOR,
             'def': TokenType.DEF,
             'return': TokenType.RETURN
         }

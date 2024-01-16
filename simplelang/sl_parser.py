@@ -1,7 +1,5 @@
-from simplelang.lexer import Lexer, Token
 from simplelang.tokens import TokenType
 
-# Node Classes
 class VarDeclNode:
     def __init__(self, var_name, value):
         self.var_name = var_name
@@ -18,6 +16,22 @@ class BinaryOpNode:
 
     def __repr__(self):
         return f"BinaryOpNode({self.left}, {self.op}, {self.right})"
+
+class PrintNode:
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"PrintNode({self.value})"
+
+class FunctionNode:
+    def __init__(self, name, parameters, body):
+        self.name = name
+        self.parameters = parameters
+        self.body = body
+
+    def __repr__(self):
+        return f"FunctionNode({self.name}, {self.parameters}, {self.body})"
 
 class IfNode:
     def __init__(self, condition, body):
@@ -55,17 +69,29 @@ class Parser:
         self.current_token = self.tokens[self.pos] if self.pos < len(self.tokens) else None
 
     def parse(self):
+        """ Parse the entire program and return a list of nodes. """
+        nodes = []
+        while self.current_token is not None and self.current_token.type != TokenType.EOF:
+            # nodes.append(self.parse_statement())
+            if self.current_token.type == TokenType.SEMICOLON:
+                self.advance()
+            else:
+                nodes.append(self.parse_statement())
+        return nodes
+
+    def parse_statement(self):
         if self.current_token.type == TokenType.LET:
             return self.parse_var_decl()
         elif self.current_token.type == TokenType.IF:
             return self.parse_if()
         elif self.current_token.type == TokenType.ELSE:
             return self.parse_else()
-        elif self.current_token == TokenType.WHILE:
+        elif self.current_token.type == TokenType.WHILE:
             return self.parse_while()
+        elif self.current_token.type == TokenType.PRINT:
+            return self.parse_print()
         else:
             return self.parse_logical_op()
-        return None
 
     def parse_var_decl(self):
         self.advance()
@@ -74,6 +100,11 @@ class Parser:
         self.advance()
         value = self.parse_expression()
         return VarDeclNode(var_name, value)
+    
+    def parse_print(self):
+        self.advance()
+        value = self.parse_expression()
+        return PrintNode(value)
 
     def parse_expression(self):
         return self.parse_binary_op(self.parse_factor, [TokenType.PLUS, TokenType.MINUS])
@@ -103,23 +134,25 @@ class Parser:
         condition = self.parse_logical_op()
         body = self.parse_block()
         return WhileNode(condition, body)
-        
+
     def parse_block(self):
-        if self.current_token.type == TokenType.LBRACE:
-            self.advance()
-            body = []
-            while self.current_token.type != TokenType.RBRACE:
-                statement = self.parse()
-                body.append(statement)
-                if self.current_token.type == TokenType.SEMICOLON:
-                    self.advance() 
-            self.advance() 
-            return body
-        else:
-            statement = self.parse()
+        if self.current_token.type != TokenType.LBRACE:
+            raise Exception("Expected '{' at the start of a block")
+
+        self.advance()  # Skip the left brace
+        body = []
+
+        while self.current_token is not None and self.current_token.type != TokenType.RBRACE:
             if self.current_token.type == TokenType.SEMICOLON:
-                self.advance() 
-            return [statement]
+                self.advance()  # Skip empty statements
+            else:
+                body.append(self.parse_statement())
+
+        if self.current_token is None or self.current_token.type != TokenType.RBRACE:
+            raise Exception("Expected '}' at the end of a block")
+
+        self.advance()  # Skip the right brace
+        return body
 
 
     def parse_atom(self):
