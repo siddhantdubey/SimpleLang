@@ -1,6 +1,6 @@
 import unittest
 from simplelang.lexer import Lexer, TokenType, Token
-from simplelang.sl_parser import Parser, VarDeclNode, BinaryOpNode, IfNode, ElseNode, WhileNode, PrintNode
+from simplelang.sl_parser import Parser, VarDeclNode, BinaryOpNode, IfNode, ElseNode, WhileNode, PrintNode, FunctionNode, ReturnNode, FunctionCallNode
 
 class TestParser(unittest.TestCase):
     def test_if_statement(self):
@@ -55,6 +55,90 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(node.body[0], VarDeclNode)
         self.assertEqual(node.body[0].var_name, 'x')
         self.assertEqual(node.body[0].value, 11)
+
+    def test_parse_string(self):
+        text = '"Hello"'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        node = parser.parse()
+        self.assertEqual(node[0], 'Hello')
+
+    def test_parse_function(self):
+        text = 'def add(x, y) { return x + y; }'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        node = parser.parse()
+        node = node[0]
+        self.assertIsInstance(node, FunctionNode)
+        self.assertEqual(node.name, 'add')
+        self.assertEqual(node.parameters, ['x', 'y'])
+        self.assertIsInstance(node.body[0], ReturnNode)
+        self.assertIsInstance(node.body[0].value, BinaryOpNode)
+        self.assertEqual(node.body[0].value.left, 'x')
+        self.assertEqual(node.body[0].value.op.type, TokenType.PLUS)
+        self.assertEqual(node.body[0].value.right, 'y')
+
+    def test_function_call(self):
+        text = 'add(1, 2);'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        node = parser.parse()
+        node = node[0]
+        self.assertIsInstance(node, FunctionCallNode)
+        self.assertEqual(node.name, 'add')
+        self.assertEqual(node.arguments, [1, 2])
+
+    def test_function_call_with_variable(self):
+        text = '''
+                def add(x, y) {
+                    return x + y;
+                }
+
+                let result = add(10, 20);
+                print(result);
+              '''
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        nodes = parser.parse()
+        self.assertIsInstance(nodes[0], FunctionNode)
+        self.assertEqual(nodes[0].name, 'add')
+        self.assertEqual(nodes[0].parameters, ['x', 'y'])
+        self.assertIsInstance(nodes[0].body[0], ReturnNode)
+        self.assertIsInstance(nodes[0].body[0].value, BinaryOpNode)
+        self.assertEqual(nodes[0].body[0].value.left, 'x')
+        self.assertEqual(nodes[0].body[0].value.op.type, TokenType.PLUS)
+        self.assertEqual(nodes[0].body[0].value.right, 'y')
+        self.assertIsInstance(nodes[1], VarDeclNode)
+        self.assertEqual(nodes[1].var_name, 'result')
+        self.assertIsInstance(nodes[1].value, FunctionCallNode)
+        self.assertEqual(nodes[1].value.name, 'add')
+        self.assertEqual(nodes[1].value.arguments, [10, 20])
+        self.assertIsInstance(nodes[2], PrintNode)
+        self.assertEqual(nodes[2].value, 'result')
 
     def test_while_loop(self):
         text = 'while (x > 10) {let x = 9;}'
