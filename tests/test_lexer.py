@@ -69,6 +69,17 @@ class TestLexer(unittest.TestCase):
         lexer = Lexer(text)
         self.assertEqual(lexer.get_next_token().type, TokenType.INVALID)
 
+    def test_lex_array(self):
+        text = '[1, 2, 3]'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            tokens.append(token)
+            if token.type == TokenType.EOF:
+                break
+        self.assertEqual([t.type for t in tokens], [TokenType.LBRACKET, TokenType.NUMBER, TokenType.COMMA, TokenType.NUMBER, TokenType.COMMA, TokenType.NUMBER, TokenType.RBRACKET, TokenType.EOF])
+
     def test_simple_program(self):
         text = '''
         let x = 10;

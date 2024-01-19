@@ -17,6 +17,21 @@ class BinaryOpNode:
     def __repr__(self):
         return f"BinaryOpNode({self.left}, {self.op}, {self.right})"
 
+class ArrayNode:
+    def __init__(self, elements):
+        self.elements = elements
+
+    def __repr__(self):
+        return f"ArrayNode({self.elements})"
+
+class ArrayIndexNode:
+    def __init__(self, array_identifier, index):
+        self.array_identifier = array_identifier
+        self.index = index
+    
+    def __repr__(self):
+        return f"ArrayIndexNode({self.array_identifier}, {self.index})"
+
 class PrintNode:
     def __init__(self, value):
         self.value = value
@@ -133,6 +148,10 @@ class Parser:
     def parse_statement(self):
         if self.current_token.type == TokenType.IDENTIFIER and self.peek().type == TokenType.LPAREN:
             return self.parse_function_call()
+        elif self.current_token.type == TokenType.LBRACKET:
+            return self.parse_array()
+        elif self.current_token.type == TokenType.IDENTIFIER and self.peek().type == TokenType.LBRACKET:
+            return self.parse_array_index()
         elif self.current_token.type == TokenType.LET:
             return self.parse_var_decl()
         elif self.current_token.type == TokenType.IF:
@@ -152,6 +171,22 @@ class Parser:
         else:
             return self.parse_logical_op()
 
+    def parse_array(self):
+        self.advance()
+        elements = self.parse_array_elements()
+        if self.current_token.type != TokenType.RBRACKET:
+            raise Exception("Expected ']' after array elements")
+        self.advance()
+        return ArrayNode(elements)
+    
+    def parse_array_elements(self):
+        elements = []
+        while self.current_token is not None and self.current_token.type != TokenType.RBRACKET:
+            elements.append(self.parse_expression())
+            if self.current_token.type == TokenType.COMMA:
+                self.advance()
+        return elements
+
     def parse_var_decl(self):
         self.advance()
         var_name = self.current_token.value
@@ -162,7 +197,10 @@ class Parser:
     
     def parse_print(self):
         self.advance()
-        value = self.parse_expression()
+        if self.current_token.type == TokenType.IDENTIFIER and self.peek().type == TokenType.LBRACKET:
+            value = self.parse_array_index()
+        else:
+            value = self.parse_expression()
         return PrintNode(value)
 
     def parse_expression(self):
@@ -212,6 +250,16 @@ class Parser:
         parameters = self.parse_parameters()
         body = self.parse_block()
         return FunctionNode(name, parameters, body)
+    
+    def parse_array_index(self):
+        array_identifier = self.current_token.value
+        self.advance()
+        self.advance()
+        index = self.parse_expression()
+        if self.current_token.type != TokenType.RBRACKET:
+            raise Exception("Expected ']' after array index")
+        self.advance()
+        return ArrayIndexNode(array_identifier, index)
 
     def parse_parameters(self):
         parameters = []
@@ -263,6 +311,8 @@ class Parser:
         elif token.type == TokenType.IDENTIFIER:
             if self.peek().type == TokenType.LPAREN:
                 return self.parse_function_call()
+            elif self.peek().type == TokenType.LBRACKET:  # Added condition to handle array indexing
+                return self.parse_array_index()
             self.advance()
             return token.value
         elif token.type == TokenType.LPAREN:
@@ -272,6 +322,14 @@ class Parser:
                 raise Exception("Missing closing parenthesis")
             self.advance()
             return result
+        elif self.current_token.type == TokenType.LBRACKET:
+            self.advance()
+            elements = self.parse_array_elements()
+            if self.current_token.type != TokenType.RBRACKET:
+                raise Exception("Expected ']' after array elements")
+            self.advance()
+            return ArrayNode(elements)
+
 
     def parse_binary_op(self, func, ops):
         left = func()

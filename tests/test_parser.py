@@ -1,6 +1,6 @@
 import unittest
 from simplelang.lexer import Lexer, TokenType, Token
-from simplelang.sl_parser import Parser, VarDeclNode, BinaryOpNode, IfNode, ElseNode, WhileNode, PrintNode, FunctionNode, ReturnNode, FunctionCallNode
+from simplelang.sl_parser import Parser, VarDeclNode, BinaryOpNode, IfNode, ElseNode, WhileNode, PrintNode, FunctionNode, ReturnNode, FunctionCallNode, ArrayNode, ArrayIndexNode
 
 class TestParser(unittest.TestCase):
     def test_if_statement(self):
@@ -55,7 +55,7 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(node.body[0], VarDeclNode)
         self.assertEqual(node.body[0].var_name, 'x')
         self.assertEqual(node.body[0].value, 11)
-
+    
     def test_parse_string(self):
         text = '"Hello"'
         lexer = Lexer(text)
@@ -160,6 +160,43 @@ class TestParser(unittest.TestCase):
         self.assertIsInstance(node.body[0], VarDeclNode)
         self.assertEqual(node.body[0].var_name, 'x')
         self.assertEqual(node.body[0].value, 9)
+
+    def test_array(self):
+        text = 'let a = [1, 2, 3];'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        nodes = parser.parse()
+        node = nodes[0]
+        self.assertIsInstance(node, VarDeclNode)
+        self.assertEqual(node.var_name, 'a')
+        self.assertIsInstance(node.value, ArrayNode)
+        self.assertEqual(node.value.elements, [1, 2, 3])
+
+    def test_array_index(self):
+        text = 'let a = [1, 2, 3]; print(a[0]);'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        nodes = parser.parse()
+        node = nodes[0]
+        self.assertIsInstance(node, VarDeclNode)
+        self.assertEqual(node.var_name, 'a')
+        self.assertIsInstance(node.value, ArrayNode)
+        self.assertEqual(node.value.elements, [1, 2, 3])
+        node = nodes[1]
+        self.assertIsInstance(node, PrintNode)
+        self.assertIsInstance(node.value, ArrayIndexNode)            
 
     def test_variable_declaration(self):
         text = 'let x = 10;'

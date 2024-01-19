@@ -60,6 +60,14 @@ class Lexer:
                 self.skip_whitespace()
                 continue
 
+            if self.current_char == '[':
+                self.advance()
+                return Token(TokenType.LBRACKET)
+
+            if self.current_char == ']':
+                self.advance()
+                return Token(TokenType.RBRACKET)
+            
             if self.current_char == ';':
                 self.advance()
                 return Token(TokenType.SEMICOLON)
