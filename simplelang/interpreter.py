@@ -14,6 +14,15 @@ class Interpreter:
     def visit_FunctionNode(self, node):
         self.functions[node.name] = node
 
+    def visit_ArrayIndexNode(self, node):
+        array = self.variables.get(node.array_identifier)
+        if array is None:
+            raise Exception(f"Undefined array: {node.array_identifier}")
+        index = self.visit(node.index)
+        if index < 0 or index >= len(array):
+            raise Exception(f"Index out of bounds: {index}")
+        return array[index]
+
     def visit_FunctionCallNode(self, node):
         function = self.functions.get(node.name)
         if function is None:

@@ -11,15 +11,8 @@ def fib(a) {
     if (a == 1) {
         return 1;
     }
-    let secondlast = 0;
-    let out = 1;
-    for i = 1 to a {
-        let temp = out;
-        let out = temp + secondlast;
-        let secondlast = temp;
-    }
-    return out;
+    return fib(a - 1) + fib(a - 2);
 }
-print("Final x is:");
-print(x);
-print(fib(6));
+let arr = [1, 2, 3, 4, 5]
+print(arr[2])
+print(fib(5))
