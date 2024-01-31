@@ -74,12 +74,13 @@ class FunctionCallNode:
         return f"FunctionCallNode({self.name}, {self.arguments})"
 
 class IfNode:
-    def __init__(self, condition, body):
+    def __init__(self, condition, body, else_node=None):
         self.condition = condition
         self.body = body
+        self.else_node = else_node
     
     def __repr__(self):
-        return f"IfNode({self.condition}, {self.body})"
+        return f"IfNode({self.condition}, {self.body} {self.else_node})"
 
 class WhileNode:
     def __init__(self, condition, body):
@@ -219,7 +220,11 @@ class Parser:
         self.advance()
         condition = self.parse_logical_op()
         body = self.parse_block()
-        return IfNode(condition, body)
+        else_node = None
+        if self.current_token != None and self.current_token.type == TokenType.ELSE:
+            else_node = self.parse_else()
+        return IfNode(condition, body, else_node)
+
 
     def parse_else(self):
         self.advance()

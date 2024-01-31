@@ -18,6 +18,20 @@ class TestInterpreter(unittest.TestCase):
         interpreter.interpret()
         self.assertEqual(interpreter.variables['x'], 9)
 
+    def test_if_else_statement(self):
+        text = 'let x = 8; if (x > 10) {let x = 9;} else {let x = 10;}'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        interpreter = Interpreter(parser)
+        interpreter.interpret()
+        self.assertEqual(interpreter.variables['x'], 10)
+
     def test_function_call(self):
         text = '''
         def add(x, y) {

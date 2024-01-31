@@ -113,6 +113,12 @@ class Interpreter:
                     return statement.value
                 else:
                     self.visit(statement)
+        elif node.else_node is not None:
+            for statement in node.else_node.body:
+                if isinstance(statement, ReturnNode):
+                    return statement.value
+                else:
+                    self.visit(statement)
         
     def visit_ElseNode(self, node):
         for statement in node.body:

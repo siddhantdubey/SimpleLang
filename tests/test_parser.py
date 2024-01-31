@@ -24,6 +24,34 @@ class TestParser(unittest.TestCase):
         self.assertEqual(node.body[0].var_name, 'x')
         self.assertEqual(node.body[0].value, 9)
 
+
+    def test_if_with_else_statement(self):
+        text = 'if (x > 10) {let x = 9;} else {let x = 10;}'
+        lexer = Lexer(text)
+        tokens = []
+        while True:
+            token = lexer.get_next_token()
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
+        parser = Parser(tokens)
+        nodes = parser.parse()
+        node = nodes[0]
+        self.assertIsInstance(node, IfNode)
+        self.assertIsInstance(node.condition, BinaryOpNode)
+        self.assertEqual(node.condition.left, 'x')
+        self.assertEqual(node.condition.op.type, TokenType.GREATER)
+        self.assertEqual(node.condition.right, 10)
+        self.assertIsInstance(node.body[0], VarDeclNode)
+        self.assertEqual(node.body[0].var_name, 'x')
+        self.assertEqual(node.body[0].value, 9)
+        else_node = node.else_node
+        self.assertIsInstance(else_node, ElseNode)
+        self.assertIsInstance(else_node.body[0], VarDeclNode)
+        self.assertEqual(else_node.body[0].var_name, 'x')
+        self.assertEqual(else_node.body[0].value, 10)
+
+
     def test_print_statement(self):
         text = 'print(10);'
         lexer = Lexer(text)
