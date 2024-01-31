@@ -157,36 +157,3 @@ class Interpreter:
         tree = self.parser.parse()
         for node in tree:
             self.visit(node)
-
-# text = 'let x = 15; print(x); while (x > 10) {print(x); let x = x - 1;}'
-# text1 = 'print(1 != 2);'
-# text_for = 'for x = 1 to 10 {print(x);}'
-
-# lexer = Lexer(text_for)
-# tokens = []
-# while True:
-#     token = lexer.get_next_token()
-#     if token.type == TokenType.EOF:
-#         break
-#     tokens.append(token)
-# parser = Parser(tokens)
-# interpreter = Interpreter(parser)
-# interpreter.interpret()
-# text = '''
-# def add(x, y) {
-#     return x + y;
-# }
-
-# let result = add(10, 20);
-# print(result);
-# '''
-# lexer = Lexer(text)
-# tokens = []
-# while True:
-#     token = lexer.get_next_token()
-#     if token.type == TokenType.EOF:
-#         break
-#     tokens.append(token)
-# parser = Parser(tokens)
-# interpreter = Interpreter(parser)
-# interpreter.interpret()
