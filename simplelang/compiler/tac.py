@@ -1,4 +1,4 @@
-from simplelang.sl_parser import BinaryOpNode, VarDeclNode, ForNode, WhileNode, PrintNode, ElseNode, IfNode
+from simplelang.sl_parser import BinaryOpNode, VarDeclNode, ForNode, WhileNode, PrintNode, ElseNode, IfNode, ArrayNode, ArrayIndexNode, FunctionNode, FunctionCallNode, ReturnNode
 
 class TAC:
     def __init__(self):
@@ -21,8 +21,13 @@ class TAC:
     
     def generate_tac(self, node):
         if isinstance(node, VarDeclNode):
-            value = self.generate_tac(node.value)
-            self.emit('=', value, None, node.var_name)
+            if isinstance(node.value, ArrayNode):
+                self.emit('alloc', len(node.value.elements), None, node.var_name)
+                for i, element in enumerate(node.value.elements):
+                    self.emit('=', element, None, f"{node.var_name}[{i}]")
+            else:
+                value = self.generate_tac(node.value)
+                self.emit('=', value, None, node.var_name)
 
         elif isinstance(node, BinaryOpNode):
             temp = self.gen_temp()
@@ -109,7 +114,58 @@ class TAC:
                 for n in else_node.body:
                     self.generate_tac(n)
             self.emit('label', None, None, l3)
+
+        elif isinstance(node, ArrayIndexNode):
+            temp = self.gen_temp()
+            self.emit('=', f"{node.array_identifier}[{node.index}]", None, temp)
+            return temp
         
+        elif isinstance(node, ReturnNode):
+            result = self.generate_tac(node.value)
+            self.emit('return', result, None, None)
+
+        elif isinstance(node, FunctionNode):
+            """
+            def add(a, b):
+                return a + b
+            becomes
+            FunctionNode('add', ['a', 'b'], [ReturnNode(BinaryOpNode('a', '+', 'b'))])
+            becomes
+            add:
+            beginFunc 2
+            t0 = a + b
+            return t0
+            endFunc
+            """
+            self.emit('label', None, None, node.name)
+            space_to_hold = len(node.parameters)
+            self.emit('beginFunc', space_to_hold, None, None)
+            for n in node.body:
+                self.generate_tac(n)
+            self.emit('endFunc', None, None, None)
+
+        elif isinstance(node, FunctionCallNode):
+            """
+            add(1, 2)
+            becomes
+            FunctionCallNode('add', [1, 2])
+            becomes
+            t0 = 1
+            t1 = 2
+            ;; make an array
+            t2 = alloc 2
+            t2[0] = t0
+            t2[1] = t1
+            call add, t2
+            """
+            for arg in node.arguments:
+                self.generate_tac(arg)
+            temp = self.gen_temp()
+            self.emit('alloc', len(node.arguments), None, temp)
+            for i, arg in enumerate(node.arguments):
+                self.emit('=', arg, None, f"{temp}[{i}]")
+            self.emit('call', node.name, temp, None)
+
     def __str__(self):
         tac_str = ""
         for (op, arg1, arg2, result) in self.code:
@@ -125,4 +181,14 @@ class TAC:
                 tac_str += f"goto {result}\n"
             elif op == 'print':
                 tac_str += f"print {arg1}\n"
+            elif op == 'alloc':
+                tac_str += f"{result} = alloc {arg1}\n"
+            elif op == 'return':
+                tac_str += f"return {arg1}\n"
+            elif op == 'beginFunc':
+                tac_str += f"beginFunc {arg1}\n"
+            elif op == 'endFunc':
+                tac_str += f"endFunc\n"
+            elif op == 'call':
+                tac_str += f"call {arg1}, {arg2}\n"
         return tac_str

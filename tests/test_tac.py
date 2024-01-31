@@ -1,6 +1,6 @@
 import unittest
 from simplelang.compiler.tac import TAC
-from simplelang.sl_parser import BinaryOpNode, VarDeclNode, ForNode, WhileNode, PrintNode, ElseNode, IfNode
+from simplelang.sl_parser import BinaryOpNode, VarDeclNode, ForNode, WhileNode, PrintNode, ElseNode, IfNode, ArrayNode, ArrayIndexNode, ReturnNode, FunctionNode, FunctionCallNode
 
 class TestTAC(unittest.TestCase):
     def test_init(self):
@@ -106,7 +106,6 @@ print i
         tac = TAC()
         node = IfNode(BinaryOpNode('i', '<', 3), [PrintNode('i')])
         tac.generate_tac(node)
-        print(str(tac))
         self.assertEqual(tac.code[0], ('label', None, None, 'l0'))
         self.assertEqual(tac.code[1], ('<', 'i', 3, 't0'))
         self.assertEqual(tac.code[2], ('ifFalse', 't0', None, 'l1'))
@@ -119,7 +118,6 @@ print i
         tac = TAC()
         node = IfNode(BinaryOpNode('i', '<', 3), [PrintNode('i')], ElseNode([PrintNode(2)]))
         tac.generate_tac(node)
-        print(str(tac))
         self.assertEqual(tac.code[0], ('label', None, None, 'l0'))
         self.assertEqual(tac.code[1], ('<', 'i', 3, 't0'))
         self.assertEqual(tac.code[2], ('ifFalse', 't0', None, 'l1'))
@@ -128,6 +126,53 @@ print i
         self.assertEqual(tac.code[5], ('label', None, None, 'l1'))
         self.assertEqual(tac.code[6], ('print', 2, None, None))
         self.assertEqual(tac.code[7], ('label', None, None, 'l2'))
+
+    def test_ArrayNode(self):
+        tac = TAC()
+        node = VarDeclNode('a', ArrayNode([1, 2, 3]))
+        tac.generate_tac(node)
+        self.assertEqual(tac.code[0], ('alloc', 3, None, 'a'))
+        self.assertEqual(tac.code[1], ('=', 1, None, 'a[0]'))
+        self.assertEqual(tac.code[2], ('=', 2, None, 'a[1]'))
+        self.assertEqual(tac.code[3], ('=', 3, None, 'a[2]'))
+
+    def test_ArrayIndexNode(self):
+        tac = TAC()
+        node = ArrayIndexNode('a', 1)
+        tac.generate_tac(node)
+        self.assertEqual(tac.code[0], ('=', 'a[1]', None, 't0'))
+
+    def test_ReturnNode(self):
+        tac = TAC()
+        node = ReturnNode(BinaryOpNode(1, '+', 2))
+        tac.generate_tac(node)
+        self.assertEqual(tac.code[0], ('+', 1, 2, 't0'))
+        self.assertEqual(tac.code[1], ('return', 't0', None, None))
+
+    def test_FunctionNode(self):
+        tac = TAC()
+        node = FunctionNode('main', ['a'], [PrintNode('a')])
+        tac.generate_tac(node)
+        expected_str = """main:
+beginFunc 1
+print a
+endFunc
+"""
+        self.assertEqual(tac.code[0], ('label', None, None, 'main'))
+        self.assertEqual(tac.code[1], ('beginFunc', 1, None, None))
+        self.assertEqual(tac.code[2], ('print', 'a', None, None))
+        self.assertEqual(tac.code[3], ('endFunc', None, None, None))
+        self.assertEqual(str(tac), expected_str)
+
+    def test_FunctionCallNode(self):
+        tac = TAC()
+        node = FunctionCallNode('add', [1, 2])
+        tac.generate_tac(node)
+        self.assertEqual(tac.code[0], ('alloc', 2, None, 't0'))
+        self.assertEqual(tac.code[1], ('=', 1, None, 't0[0]'))
+        self.assertEqual(tac.code[2], ('=', 2, None, 't0[1]'))
+        self.assertEqual(tac.code[3], ('call', 'add', 't0', None))
+       
 
 
 if __name__ == '__main__':
