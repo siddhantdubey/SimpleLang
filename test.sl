@@ -1,3 +1,5 @@
+let a = 2 + (3 * 2);
+print(a);
 let x = 15;
 print(x);
 while (x < 100) {
