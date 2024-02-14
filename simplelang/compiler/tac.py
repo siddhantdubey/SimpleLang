@@ -31,9 +31,9 @@ class TAC:
 
         elif isinstance(node, BinaryOpNode):
             temp = self.gen_temp()
-            self.generate_tac(node.left)
-            self.generate_tac(node.right)
-            self.emit(node.op, node.left, node.right, temp)
+            left_result = self.generate_tac(node.left)  # Recursively process the left operand
+            right_result = self.generate_tac(node.right)  # Recursively process the right operand
+            self.emit(node.op, left_result, right_result, temp)
             return temp
 
         elif isinstance(node, WhileNode):

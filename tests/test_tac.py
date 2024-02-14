@@ -172,8 +172,13 @@ endFunc
         self.assertEqual(tac.code[1], ('=', 1, None, 't0[0]'))
         self.assertEqual(tac.code[2], ('=', 2, None, 't0[1]'))
         self.assertEqual(tac.code[3], ('call', 'add', 't0', None))
-       
 
+    def test_ComplexBinaryOpAssignment(self):
+        tac = TAC()
+        node = VarDeclNode('x', BinaryOpNode(15, '+', BinaryOpNode(5, '*', 2)))
+        tac.generate_tac(node)
+        self.assertEqual(tac.code[0], ('*', 5, 2, 't1'))
+        self.assertEqual(tac.code[1], ('+', 15, 't1', 't0'))
 
 if __name__ == '__main__':
     unittest.main()
